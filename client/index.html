@@ -1,0 +1,28 @@
+<h1> Test </h1>
+
+<div id="main-window" style="display: flex">
+ <table id="buys">
+  <tr>
+    <th>Qty</th>
+    <th>Price</th>
+  </tr>
+ </table>
+ 
+ <table id="sells">
+  <tr>
+    <th>Qty</th>
+    <th>Price</th>
+  </tr>
+</table>   
+</div>
+<br><br>
+<label for="type"> Order type: </label>
+<select name="type" id="typeselector">
+  <option value="buy">Buy</option>
+  <option value="sell">Sell</option>
+</select><br>
+<label for="qty">Number of shares:</label>
+<input type="text" id="qtyinput" name="qty"><br>
+<label for="price">Price:</label>
+<input type="text" id="priceinput" name="price"><br>
+<button type="button" id="submit-button">Submit</button>

@@ -1,0 +1,37 @@
+[package]
+name = "client"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+js-sys = "0.3.60"
+wasm-bindgen = "0.2.83"
+serde = { version = "1.0.150", features = ["derive"] }
+serde-json-wasm = "0.5.0"
+
+[dependencies.web-sys]
+version = "0.3.4"
+features = [
+  'Document',
+  'Element',
+  'HtmlElement',
+  'Node',
+  'Window',
+  'HtmlButtonElement',
+  'EventListener',
+  'HtmlCollection',
+  'HtmlInputElement',
+  'HtmlSelectElement',
+  'HtmlTextAreaElement',
+  'HtmlTableElement',
+  'HtmlTableRowElement',
+  'HtmlTableCellElement',
+  'WebSocket',
+  'MessageEvent',
+  'console'
+]
