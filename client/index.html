@@ -1,28 +1,117 @@
-<h1> Test </h1>
+<!DOCTYPE html>
 
-<div id="main-window" style="display: flex">
- <table id="buys">
-  <tr>
-    <th>Qty</th>
-    <th>Price</th>
-  </tr>
- </table>
- 
- <table id="sells">
-  <tr>
-    <th>Qty</th>
-    <th>Price</th>
-  </tr>
-</table>   
+<head>
+  <style>
+	table {
+		border: 1px solid;
+	}
+	.mine {
+		color: steelblue;
+	}
+	#matches {
+		display: block;
+		width: auto;
+		height: 300px;
+		overflow-y: scroll;
+	}	
+	#price-graph {
+		max-height: 300px;
+	}
+	h1 {
+		margin: 5px;
+	}
+	.dark {
+		background: #000;
+		color: #fff;
+	}
+	.dark input {
+		background: #000;
+		color: #fff;
+		border: 1px solid;
+	}
+	.dark button {
+		background: #000;
+		color: #fff;
+		border: 1px solid;
+	}
+	.dark select {
+		background: #000;
+		color: #fff;
+		border: 1px solid;
+	}
+	.dark checkbox {
+		background: #000;
+		color: #fff;
+		border: 1px solid;
+	}
+	.stats {
+		margin: 10px 0px 0px;
+	}
+  </style>
+</head>
+
+<!-- obligatory notice that i am not a webdev and this is all definitely bad -->
+<!-- if you're reading this: please don't mess with things that much, this was kind of a rush job -->
+<body>
+<h1 id="header">Exchange</h1>
+<div style="display: flex">
+  <button type="button" id="exchange-button" hidden>Exchange</button>
+  <button type="button" id="darkpool-button">Darkpool</button>
+</div><br>
 </div>
+<div id="exchange" style="display: flex"> 
+  <table id="buys">
+	<caption> Bids </caption>
+  </table>
+  &nbsp;&nbsp;
+  <table id="sells">
+	<caption> Asks </caption>
+  </table>
+&nbsp;&nbsp;
+  <canvas id="lob-graph" width="400" height="300"></canvas>
+  &nbsp;&nbsp;&nbsp;
+<div id="outer-matches">
+<p style="text-align: center; margin: 0px;x">Matches</p>
+<table id="matches">
+</table>
+</div>
+&nbsp;&nbsp;&nbsp;
+<canvas id="price-graph" width="400" height="300"></canvas>
+</div>
+<div id="exchange-last-price" class="stats"></div>  
+<div id="darkpool" style="display: flex" hidden>
+ <div id="outer-dark-matches" hidden>
+   <p style="text-align: center; margin: 0px;x">Matches</p>
+   <table id="dark-matches">
+   </table>
+ </div>
+ <canvas id="darkpool-price-graph" width="400" height="300" hidden></canvas>
+</div>
+<div id="darkpool-last-price" class="stats" hidden></div>  
 <br><br>
-<label for="type"> Order type: </label>
-<select name="type" id="typeselector">
-  <option value="buy">Buy</option>
-  <option value="sell">Sell</option>
-</select><br>
-<label for="qty">Number of shares:</label>
-<input type="text" id="qtyinput" name="qty"><br>
-<label for="price">Price:</label>
-<input type="text" id="priceinput" name="price"><br>
-<button type="button" id="submit-button">Submit</button>
+<div id="submission">
+  <label for="type"> Order type: </label>
+  <select name="type" id="typeselector">
+	<option value="buy">Buy</option>
+	<option value="sell">Sell</option>
+  </select><br>
+  <label for="qty">Number of shares:</label>
+  <input type="text" id="qtyinput" name="qty"><br>
+  <label for="price">Price:</label>
+  <input type="text" id="priceinput" name="price"><br><br>
+  <button type="button" id="exchange-submit-button">Submit</button>
+  <button type="button" id="darkpool-submit-button" hidden>Submit</button>
+  <span id="hidden">
+  <label for="is-hidden"> (hidden?) </label>
+  <input type="checkbox" name="is-hidden" id="is-hidden">
+  </span>
+</div>
+<br>
+
+<div id="about-you" style="display: flex; gap: 10px;">
+<div id="your-orders"></div>
+<div id="your-dark-orders" hidden></div>
+<div id="goal"></div> 
+</div>
+</body>
+<p style="font-size: 8pt; position:fixed; bottom:0;right:0;">made with 🦀 &nbsp;&nbsp;</p>

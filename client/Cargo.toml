@@ -13,6 +13,11 @@ js-sys = "0.3.60"
 wasm-bindgen = "0.2.83"
 serde = { version = "1.0.150", features = ["derive"] }
 serde-json-wasm = "0.5.0"
+plotters = "0.3.4"
+plotters-canvas = "0.3.0"
+postcard = "1.0.2"
+rmp-serde = "1.1.1"
+human_format = "1.0.3"
 
 [dependencies.web-sys]
 version = "0.3.4"
@@ -25,13 +30,19 @@ features = [
   'HtmlButtonElement',
   'EventListener',
   'HtmlCollection',
+  'HtmlCanvasElement',
   'HtmlInputElement',
   'HtmlSelectElement',
   'HtmlTextAreaElement',
   'HtmlTableElement',
+  'HtmlTableCaptionElement',
   'HtmlTableRowElement',
   'HtmlTableCellElement',
   'WebSocket',
+  'BinaryType',
   'MessageEvent',
   'console'
 ]
+
+[dependencies.common]
+path = "../common"

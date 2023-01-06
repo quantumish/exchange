@@ -1,71 +1,115 @@
 // use uuid::Uuid;
 
-#[derive(PartialEq, Clone, Debug)]
-pub enum OrderType {
-    Ask,
-    Bid
-}
+use common::{Order, OrderType, VisibleOrder};
 
-#[derive(Debug, Clone)]
-pub struct Order {
-    pub otype: OrderType,
-    pub price: f64,
-    pub trader: i64,
-    pub qty: u64,
-    pub time: u128,
-    pub id: i64,
-	pub hidden: bool,
-}
+// TODO handle true equality
+// TODO hidden orders back of queue
+// TODO seperate bid compare function that preserves time ordering
+// TODO make sure that hidden orders still have time ordering in queue
 
-// TODO handle equality
-fn compare_orders(a: &Order, b: &Order) -> std::cmp::Ordering {
-    if a.price == b.price {
-        return if a.time > b.time {
-            std::cmp::Ordering::Greater
-        } else { std::cmp::Ordering::Less }
-    }
+fn compare_ask_orders(a: &Order, b: &Order) -> std::cmp::Ordering {
 	if a.price > b.price {
-        std::cmp::Ordering::Greater
-    } else { std::cmp::Ordering::Less }
+		std::cmp::Ordering::Greater
+	} else if a.price < b.price {
+		std::cmp::Ordering::Less
+	} else { match (a.hidden, b.hidden) {
+		(true, false) => std::cmp::Ordering::Greater,
+		(false, true) => std::cmp::Ordering::Less,
+		_ => {
+			if a.time > b.time {
+				std::cmp::Ordering::Greater
+			} else if a.time < b.time { std::cmp::Ordering::Less }
+			else { std::cmp::Ordering::Equal }
+		}
+	}}
 }
 
+fn compare_bid_orders(a: &Order, b: &Order) -> std::cmp::Ordering {
+	if a.price > b.price {
+		std::cmp::Ordering::Less
+	} else if a.price < b.price {
+		std::cmp::Ordering::Greater
+	} else { match (a.hidden, b.hidden) {
+		(true, false) => std::cmp::Ordering::Greater,
+		(false, true) => std::cmp::Ordering::Less,
+		_ => {
+			if a.time > b.time {
+				std::cmp::Ordering::Greater
+			} else if a.time < b.time { std::cmp::Ordering::Less }
+			else { std::cmp::Ordering::Equal }
+		}
+	}}
+}
+
+#[derive(Clone)]
 pub struct Book {
-    pub buy: Vec<Order>,
-    pub sell: Vec<Order>,
+	pub buy: Vec<Order>,
+	pub sell: Vec<Order>,
+	pub matches: Vec<common::Match>,
 }
 
 impl Book {
-    pub fn new() -> Self {
-        Self {
-            buy: Vec::new(),
-            sell: Vec::new()
-        }
-    }
+	pub fn new() -> Self {
+		Self {
+			buy: Vec::new(),
+			sell: Vec::new(),
+			matches: Vec::new(),
+		}
+	}
 
-    pub fn add_order(&mut self, order: Order) {		
+	pub fn add_order(&mut self, order: Order) {
 		let (queue, other): (&mut Vec<Order>, &mut Vec<Order>) =
 			if order.otype == OrderType::Ask {
 				(&mut self.sell, &mut self.buy)
 			} else { (&mut self.buy, &mut self.sell) };
-		
-		queue.push(order.clone());
-		queue.sort_by(compare_orders);
 
+		queue.push(order.clone());
+		if order.otype == OrderType::Bid {		
+			queue.sort_by(compare_bid_orders);			
+		} else { queue.sort_by(compare_ask_orders); }
+
+		let mut offset = 0;
 		for (i, o) in other.clone().iter().enumerate() {
-			if o.price < order.price && order.otype == OrderType::Ask { break }
+			if o.price < order.price && order.otype == OrderType::Ask { continue }
 			if o.price > order.price && order.otype == OrderType::Bid { break }
-			if o.qty < order.qty {
-				other.remove(i);
+			self.matches.push(common::Match {
+				buyer: if o.otype == OrderType::Bid { o.trader } else { order.trader },
+				seller: if o.otype == OrderType::Ask { o.trader } else { order.trader },
+				price: if order.time < o.time { order.price } else { o.price },
+				qty: o.qty,				
+			});			
+			if o.qty < queue[0].qty {
+				other.remove(i-offset);
 				queue[0].qty -= o.qty;
-			} else if o.qty == order.qty {
-				other.remove(i);
+				offset += 1;
+			} else if o.qty == queue[0].qty {
+				other.remove(i-offset);
 				queue.remove(0);
 				break;
 			} else {
+				self.matches.last_mut().unwrap().qty = queue[0].qty;
+				other[i-offset].qty -= queue[0].qty;				
 				queue.remove(0);
-				other[i].qty -= order.qty;
 				break;
 			}
 		}
-    }	
+	}
+
+	pub fn drop_order(&mut self, id: i64) -> i64 {
+		for (i, o) in self.buy.iter().enumerate() {
+			if o.id == id {
+				let ret = o.trader;
+				self.buy.remove(i);
+				return ret;
+			}
+		}
+		for (i, o) in self.sell.iter().enumerate() {
+			if o.id == id {
+				let ret = o.trader;
+				self.sell.remove(i);
+				return ret;
+			}
+		}
+		todo!()
+	}
 }
