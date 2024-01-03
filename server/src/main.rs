@@ -1,5 +1,9 @@
 mod book;
 use std::collections::HashMap;
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
+
+use std::path::Path;
 
 use book::*;
 
@@ -33,7 +37,7 @@ static PREV: std::sync::Mutex<OrderType> = std::sync::Mutex::new(OrderType::Ask)
 
 
 lazy_static::lazy_static! {
-	static ref USERS: std::sync::Mutex<HashMap<i64, TraderStatus>>
+	static ref USERS: std::sync::Mutex<HashMap<u64, TraderStatus>>
 		= std::sync::Mutex::new(HashMap::new());
 }
 
@@ -47,16 +51,31 @@ pub fn gen_id() -> i64 {
         .generate()
 }
 
+fn get_book(path: &str) -> Book {
+	if Path::new(path).exists() {
+		serde_json::from_str(
+			&std::fs::read_to_string("./book.json").unwrap()
+		).unwrap()
+	} else {
+		Book::new()
+	}	
+}
 
 #[handler]
 fn ws(
     ws: WebSocket,
+	addr: &poem::web::RemoteAddr,
     sender: Data<&tokio::sync::broadcast::Sender<(Book, Book)>>,
 ) -> impl IntoResponse {
     let sender = sender.clone(); // Subscribe to global channel
+	let tid = if let poem::Addr::SocketAddr(s) = addr.clone().0 {
+		if let std::net::SocketAddr::V4(a) = s {
+			let mut hasher = DefaultHasher::new();
+			a.ip().hash(&mut hasher);
+			hasher.finish()
+		} else { todo!("No IPV6.") }
+	} else { todo!("Only supporting normal SocketAddr for now.") };
     ws.on_upgrade(move |socket| async move {
-		let mut tid = gen_id();
-		let mut rng = thread_rng();
 		let existing = *PREV.lock().unwrap();
 		USERS
 			.lock().unwrap()
@@ -86,9 +105,9 @@ fn ws(
 						.duration_since(std::time::SystemTime::UNIX_EPOCH).unwrap();
 					let req: common::Request = rmp_serde::from_slice(&msg).unwrap();
 					let mut book = LOB.lock().unwrap();
-					let mut tmp = book.get_or_insert_with(|| Book::new());
+					let mut tmp = book.get_or_insert_with(|| get_book("./book.json"));
 					let mut pool = DARKPOOL.lock().unwrap();
-					let mut dtmp = pool.get_or_insert_with(|| Book::new());
+					let mut dtmp = pool.get_or_insert_with(|| get_book("./dpool.json"));
 					let dict = USERS.lock().unwrap().clone();
 					let user = dict.get(&tid).unwrap();
 					match req {
@@ -130,9 +149,13 @@ fn ws(
 						}
 						common::Request::Get => (),
 						common::Request::Cancel(id) => {							
-							tid = tmp.drop_order(id); // HACK HACK HACK
+							tmp.drop_order(id); // HACK HACK HACK
 						},
 					}
+
+					std::fs::write("./book.json", serde_json::to_string(&tmp.clone()).unwrap()).unwrap();
+					std::fs::write("./dpool.json", serde_json::to_string(&dtmp.clone()).unwrap()).unwrap();
+					std::fs::write("./users.json", serde_json::to_string(&dict).unwrap()).unwrap();
 
 					let (other, other2) = (tmp.clone(), dtmp.clone());
 					let mut all_matches = Vec::new();
@@ -245,7 +268,8 @@ fn ws(
 async fn main() -> Result<(), std::io::Error> {
     if std::env::var_os("RUST_LOG").is_none() {
         std::env::set_var("RUST_LOG", "poem=debug");
-    }
+    }	
+	
     tracing_subscriber::fmt::init();
     let app = Route::new().at(
         "/",

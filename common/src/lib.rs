@@ -10,7 +10,7 @@ pub enum OrderType {
 pub struct Order {
     pub otype: OrderType,
     pub price: f64,
-    pub trader: i64,
+    pub trader: u64,
     pub qty: u64,
     pub time: u128,
     pub id: i64,
@@ -35,8 +35,8 @@ pub struct VisibleOrder {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Match {
-	pub buyer: i64,
-	pub seller: i64,
+	pub buyer: u64,
+	pub seller: u64,
 	pub qty: u64,
 	pub price: f64,
 }

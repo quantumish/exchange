@@ -98,7 +98,7 @@ pub fn run() -> Result<(), JsValue> {
 	let window = web_sys::window().expect("no global `window` exists");
 	let document = window.document().expect("should have a document on window");
 
-	let ws = web_sys::WebSocket::new("ws://api.exchange.jklsnt.com")?;
+	let ws = web_sys::WebSocket::new("ws://localhost:5001")?;
 	ws.set_binary_type(web_sys::BinaryType::Arraybuffer);
 
 	let cloned_ws = ws.clone();
@@ -204,7 +204,7 @@ pub fn run() -> Result<(), JsValue> {
 				let cancel = Closure::wrap(Box::new(move || {
 					// fuck it. open the same websocket inside a websocket message handler.
 					// i don't care anymore.
-					let ws = web_sys::WebSocket::new("ws://api.exchange.jklsnt.com").unwrap();
+					let ws = web_sys::WebSocket::new("ws://localhost:5001").unwrap();
 					ws.set_binary_type(web_sys::BinaryType::Arraybuffer);
 					let cloned_ws = ws.clone();
 					let onopen_callback = Closure::<dyn FnMut(_)>::new(move |_e: web_sys::MessageEvent| {

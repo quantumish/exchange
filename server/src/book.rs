@@ -1,6 +1,7 @@
 // use uuid::Uuid;
 
 use common::{Order, OrderType, VisibleOrder};
+use serde::{Serialize, Deserialize};
 
 // TODO handle true equality
 // TODO hidden orders back of queue
@@ -41,7 +42,7 @@ fn compare_bid_orders(a: &Order, b: &Order) -> std::cmp::Ordering {
 	}}
 }
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Book {
 	pub buy: Vec<Order>,
 	pub sell: Vec<Order>,
@@ -95,19 +96,21 @@ impl Book {
 		}
 	}
 
-	pub fn drop_order(&mut self, id: i64) -> i64 {
+	pub fn drop_order(&mut self, id: i64) {
 		for (i, o) in self.buy.iter().enumerate() {
 			if o.id == id {
-				let ret = o.trader;
+				// let ret = o.trader;
 				self.buy.remove(i);
-				return ret;
+				return;
+				// return ret;
 			}
 		}
 		for (i, o) in self.sell.iter().enumerate() {
 			if o.id == id {
-				let ret = o.trader;
+				// let ret = o.trader;
 				self.sell.remove(i);
-				return ret;
+				return;
+				// return ret;
 			}
 		}
 		todo!()
