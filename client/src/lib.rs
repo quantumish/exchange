@@ -125,7 +125,7 @@ pub fn run() -> Result<(), JsValue> {
 
 	let cloned_ws = ws.clone();
 	let onopen_callback = Closure::<dyn FnMut(_)>::new(move |_e: web_sys::MessageEvent| {
-		let req = common::Request::Get;
+		let req = common::Request::new(uid, common::RequestBody::Get);
 		let msg = rmp_serde::to_vec(&req).unwrap();
 		cloned_ws.send_with_u8_array(&msg).unwrap();
 	});	 
@@ -230,7 +230,7 @@ pub fn run() -> Result<(), JsValue> {
 					ws.set_binary_type(web_sys::BinaryType::Arraybuffer);
 					let cloned_ws = ws.clone();
 					let onopen_callback = Closure::<dyn FnMut(_)>::new(move |_e: web_sys::MessageEvent| {
-						let req = common::Request::Cancel(id);
+						let req = common::Request::new(uid, common::RequestBody::Cancel(id));
 						let msg = rmp_serde::to_vec(&req).unwrap();
 						cloned_ws.send_with_u8_array(&msg).unwrap();
 					});	 
@@ -354,7 +354,7 @@ pub fn run() -> Result<(), JsValue> {
 		let hidden = get_element(&doc,"is-hidden")
 			.dyn_into::<web_sys::HtmlInputElement>().unwrap().checked();
 		web_sys::console::log_1(&JsValue::from_bool(hidden));
-		let req = common::Request::ExchangeOrder(common::OrderReq {
+		let req = common::Request::new(uid, common::RequestBody::ExchangeOrder(common::OrderReq {
 			kind: match otype.as_str() {
 				"buy" => common::OrderType::Bid,
 				"sell" => common::OrderType::Ask,
@@ -363,7 +363,7 @@ pub fn run() -> Result<(), JsValue> {
 			price,
 			qty,
 			hidden
-		});		
+		}));		
 		let msg = rmp_serde::to_vec(&req).unwrap();
 		cloned_ws.send_with_u8_array(&msg).unwrap();
 	}) as Box<dyn FnMut()>);
@@ -382,7 +382,7 @@ pub fn run() -> Result<(), JsValue> {
 		let hidden = get_element(&doc,"is-hidden")
 			.dyn_into::<web_sys::HtmlInputElement>().unwrap().checked();
 		web_sys::console::log_1(&JsValue::from_bool(hidden));
-		let req = common::Request::DarkpoolOrder(common::OrderReq {
+		let req = common::Request::new(uid, common::RequestBody::DarkpoolOrder(common::OrderReq {
 			kind: match otype.as_str() {
 				"buy" => common::OrderType::Bid,
 				"sell" => common::OrderType::Ask,
@@ -391,7 +391,7 @@ pub fn run() -> Result<(), JsValue> {
 			price,
 			qty,
 			hidden
-		});		
+		}));		
 		let msg = rmp_serde::to_vec(&req).unwrap();
 		cloned_ws.send_with_u8_array(&msg).unwrap();
 	}) as Box<dyn FnMut()>);
