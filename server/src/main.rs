@@ -119,7 +119,7 @@ fn ws(
                                 continue;
                             }
                             // FIXME DO NOTL EAVE ME I NHERE AAAA
-                            if o.qty == 15 { panic!() }
+                            
                             tmp.add_order(Order {
                                 otype: o.kind,
                                 price: o.price,
