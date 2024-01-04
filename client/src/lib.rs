@@ -3,6 +3,10 @@ use wasm_bindgen::JsCast;
 use web_sys::{HtmlElement, Document};
 use plotters::prelude::*;
 use plotters_canvas::CanvasBackend;
+use wasm_cookies::{get, set, CookieOptions};
+
+use rand::Rng;
+use std::borrow::Cow;
 
 pub fn pretty_u64(x: u64) -> String {
 	if x < 1000 {
@@ -97,6 +101,24 @@ pub fn rebuild_tables(vals: (Vec<common::VisibleOrder>, Vec<common::VisibleOrder
 pub fn run() -> Result<(), JsValue> {
 	let window = web_sys::window().expect("no global `window` exists");
 	let document = window.document().expect("should have a document on window");
+    let mut rng = rand::thread_rng();
+
+    let mut created = false;
+    let uid:u64 = match get("exchange-uid") {
+        Some(x) => x.unwrap().parse::<u64>().unwrap(),
+        None => {created=true; rng.gen::<u64>()}
+    };
+    
+    // if a new uid is created, we want to save it down
+    if created {
+        let mut options = CookieOptions::default();
+        options.expires = Some(Cow::Borrowed("Tue, 19 Jan 2038 03:14:07 GMT"));
+        let owned = uid.to_string();
+        set("exchange-uid", &owned, &options);
+    }
+
+
+    web_sys::console::log_1(&JsValue::from_str(&format!("{:?}", uid)));
 
 	let ws = web_sys::WebSocket::new("ws://localhost:5001")?;
 	ws.set_binary_type(web_sys::BinaryType::Arraybuffer);

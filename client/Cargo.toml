@@ -18,6 +18,9 @@ plotters-canvas = "0.3.0"
 postcard = "1.0.2"
 rmp-serde = "1.1.1"
 human_format = "1.0.3"
+wasm-cookies = "0.2.1"
+getrandom = { version = "0.2", features = ["js"] }
+rand = "0.8.5"
 
 [dependencies.web-sys]
 version = "0.3.4"
