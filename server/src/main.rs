@@ -99,7 +99,7 @@ fn ws(
 
         tokio::spawn(async move {
             // Wait to receive a message from person who opened websocket
-            while let Some(Ok(mesg)) = stream.next().await {
+            while let Some(Ok(mesg)) = stream.next().await { 
                 if let Message::Binary(msg) = mesg {
 					let duration_since_epoch = std::time::SystemTime::now()
 						.duration_since(std::time::SystemTime::UNIX_EPOCH).unwrap();
@@ -119,6 +119,7 @@ fn ws(
 							{
 								continue;
 							}
+							if o.qty == 15 { panic!() }
 							tmp.add_order(Order {
 								otype: o.kind,
 								price: o.price,
@@ -269,6 +270,13 @@ async fn main() -> Result<(), std::io::Error> {
     if std::env::var_os("RUST_LOG").is_none() {
         std::env::set_var("RUST_LOG", "poem=debug");
     }	
+
+	let orig_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |panic_info| {
+        // invoke the default handler and exit the process
+        orig_hook(panic_info);
+        std::process::exit(1);
+    }));
 	
     tracing_subscriber::fmt::init();
     let app = Route::new().at(
