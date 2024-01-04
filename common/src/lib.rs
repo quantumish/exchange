@@ -42,11 +42,23 @@ pub struct Match {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum Request {
+pub enum RequestBody {
 	Cancel(i64),
 	ExchangeOrder(OrderReq),
 	DarkpoolOrder(OrderReq),
 	Get,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Request {
+	pub tid: u64,
+	pub body: RequestBody,
+}
+
+impl Request {
+	pub fn new(tid: u64, body: RequestBody) -> Self {
+		Request { tid, body }
+	}
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

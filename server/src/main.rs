@@ -67,36 +67,13 @@ fn ws(
 	addr: &poem::web::RemoteAddr,
     sender: Data<&tokio::sync::broadcast::Sender<(Book, Book)>>,
 ) -> impl IntoResponse {
-    let sender = sender.clone(); // Subscribe to global channel
-	let tid = if let poem::Addr::SocketAddr(s) = addr.clone().0 {
-		if let std::net::SocketAddr::V4(a) = s {
-			let mut hasher = DefaultHasher::new();
-			a.ip().hash(&mut hasher);
-			hasher.finish()
-		} else { todo!("No IPV6.") }
-	} else { todo!("Only supporting normal SocketAddr for now.") };
-    ws.on_upgrade(move |socket| async move {
-		let existing = *PREV.lock().unwrap();
-		USERS
-			.lock().unwrap()
-			.insert(tid, TraderStatus {
-				goal: if existing == OrderType::Ask {
-					*PREV.lock().unwrap() = OrderType::Bid;
-					OrderType::Bid
-				} else {
-					*PREV.lock().unwrap() = OrderType::Ask;
-					OrderType::Ask
-				},				
-				amount: TOTAL_SHARES,
-				tolerance: TOTAL_SHARES/10,
-				orders: 0,
-				done: 0,
-				opp: 0
-			});
-		
+    let sender = sender.clone(); // Subscribe to global channel	
+    ws.on_upgrade(move |socket| async move {		
         let mut receiver = sender.subscribe();
         let (mut sink, mut stream) = socket.split();
 
+		let mut tid: u64 = u64::MAX;
+		
         tokio::spawn(async move {
             // Wait to receive a message from person who opened websocket
             while let Some(Ok(mesg)) = stream.next().await { 
@@ -104,14 +81,35 @@ fn ws(
 					let duration_since_epoch = std::time::SystemTime::now()
 						.duration_since(std::time::SystemTime::UNIX_EPOCH).unwrap();
 					let req: common::Request = rmp_serde::from_slice(&msg).unwrap();
+					tid = req.tid;
+
+					let mut users = USERS.lock().unwrap();
+					let existing = *PREV.lock().unwrap();
+					if users.get(&tid).is_none() {
+						users.insert(tid, TraderStatus {
+							goal: if existing == OrderType::Ask {
+								*PREV.lock().unwrap() = OrderType::Bid;
+								OrderType::Bid
+							} else {
+								*PREV.lock().unwrap() = OrderType::Ask;
+								OrderType::Ask
+							},				
+							amount: TOTAL_SHARES,
+							tolerance: TOTAL_SHARES/10,
+							orders: 0,
+							done: 0,
+							opp: 0
+						});
+					}
+					
 					let mut book = LOB.lock().unwrap();
 					let mut tmp = book.get_or_insert_with(|| get_book("./book.json"));
 					let mut pool = DARKPOOL.lock().unwrap();
 					let mut dtmp = pool.get_or_insert_with(|| get_book("./dpool.json"));
 					let dict = USERS.lock().unwrap().clone();
 					let user = dict.get(&tid).unwrap();
-					match req {
-						common::Request::ExchangeOrder(o) => {
+					match req.body {
+						common::RequestBody::ExchangeOrder(o) => {
 							if (o.kind != user.goal && user.opp+o.qty > user.tolerance) ||
 								(o.kind == user.goal && user.done >= user.amount) ||
 								(user.orders >= MAX_ORDERS) || (o.price <= 0.01) ||
@@ -119,6 +117,7 @@ fn ws(
 							{
 								continue;
 							}
+							// FIXME DO NOTL EAVE ME I NHERE AAAA
 							if o.qty == 15 { panic!() }
 							tmp.add_order(Order {
 								otype: o.kind,
@@ -130,7 +129,7 @@ fn ws(
 								hidden: o.hidden,
 							});							
 						},
-						common::Request::DarkpoolOrder(o) => {
+						common::RequestBody::DarkpoolOrder(o) => {
 							if (o.kind != user.goal && user.opp+o.qty > user.tolerance)  ||
 								(o.kind == user.goal && user.done >= user.amount) ||
 								(user.orders >= MAX_ORDERS) || (o.price <= 0.01) ||
@@ -148,8 +147,8 @@ fn ws(
 								hidden: o.hidden,
 							});
 						}
-						common::Request::Get => (),
-						common::Request::Cancel(id) => {							
+						common::RequestBody::Get => (),
+						common::RequestBody::Cancel(id) => {							
 							tmp.drop_order(id); // HACK HACK HACK
 						},
 					}
