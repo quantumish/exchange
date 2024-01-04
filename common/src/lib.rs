@@ -55,6 +55,12 @@ pub struct Request {
 	pub body: RequestBody,
 }
 
+impl Request {
+	pub fn new(tid: u64, body: RequestBody) -> Self {
+		Request { tid, body }
+	}
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TraderStatus {
 	pub goal: OrderType,
